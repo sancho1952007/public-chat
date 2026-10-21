@@ -55,6 +55,16 @@ const server = serve({
   websocket: {
     async message(ws, message) {
       const moderation = await Moderate(message.toString());
+      if (!moderation.success) {
+        ws.send(JSON.stringify({
+          type: 'error',
+          data: {
+            error_message: 'Moderation Error',
+            error_desc: 'Something went wrong with moderation'
+          }
+        }));
+        return;
+      }
       if (moderation.allowed) {
         const msg_id = Bun.randomUUIDv7();
         server.publish('chat', JSON.stringify({
