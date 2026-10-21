@@ -99,6 +99,8 @@ export function App() {
     ws.onopen = () => {
       console.log('Websocket opened');
     }
+
+    return () => ws.close();
   }, []);
 
   return (
