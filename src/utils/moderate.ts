@@ -10,8 +10,12 @@ const violations = {
 } as const;
 
 export async function Moderate(text: string): Promise<{
+    success: false
+} | {
+    success: true,
     allowed: true
 } | {
+    success: true,
     allowed: false,
     violation: string
 }> {
@@ -35,18 +39,23 @@ export async function Moderate(text: string): Promise<{
     });
 
     if (!response.ok) {
-        throw new Error(`CF API error: ${response.status} ${await response.text()}`);
+        console.error(`CF API error: ${response.status} ${await response.text()}`);
+        return {
+            success: false
+        };
     }
 
     const res = await response.json();
     if (res.result.answers.moderation.choice == 'none') {
         return {
+            success: true,
             allowed: true
         }
     } else {
         const violationKey = res.result?.answers?.moderation?.choice;
 
         return {
+            success: true,
             allowed: false,
             // replace _ with space in the error message
             violation: violationKey.replace('_', ' ')
