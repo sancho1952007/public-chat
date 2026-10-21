@@ -128,19 +128,19 @@ const server = serve({
         clients
       }));
 
+      server.publish('user-joined', JSON.stringify({
+        type: 'user-joined',
+        name: ws.data.name
+      }));
+      ws.subscribe("user-joined");
+      ws.subscribe("user-left");
+
       ws.send(JSON.stringify({
         type: 'messages-list',
         messages: (await redis.lrange("messages:list", 0, 19)).reverse() // Send last 20 messages
       }));
 
-      server.publish('user-joined', JSON.stringify({
-        type: 'user-joined',
-        name: ws.data.name
-      }));
-
       ws.subscribe("chat");
-      ws.subscribe("user-joined");
-      ws.subscribe("user-left");
     },
     close(ws) {
       // If the user was force disconnected from the server, ignore the cleanup step since connection wasn't approved in the first place
