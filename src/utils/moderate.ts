@@ -19,46 +19,52 @@ export async function Moderate(text: string): Promise<{
     allowed: false,
     violation: string
 }> {
-    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${Bun.env.CF_ACC_ID}/ai/run/@cf/cloudflare/clef-flash`, {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${Bun.env.CF_AI_API_KEY}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            model: "clef-flash",
-            state: text,
-            questions: {
-                moderation: {
-                    type: "choice",
-                    instructions: "Analyze the text for safety violations, including minor spelling obfuscations or formatting tricks to evaluate the core semantic meaning.",
-                    criteria: violations,
-                },
+    try {
+        const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${Bun.env.CF_ACC_ID}/ai/run/@cf/cloudflare/clef-flash`, {
+            method: "POST",
+            signal: AbortSignal.timeout(10000),
+            headers: {
+                "Authorization": `Bearer ${Bun.env.CF_AI_API_KEY}`,
+                "Content-Type": "application/json",
             },
-        }),
-    });
+            body: JSON.stringify({
+                model: "clef-flash",
+                state: text,
+                questions: {
+                    moderation: {
+                        type: "choice",
+                        instructions: "Analyze the text for safety violations, including minor spelling obfuscations or formatting tricks to evaluate the core semantic meaning.",
+                        criteria: violations,
+                    },
+                },
+            }),
+        });
 
-    if (!response.ok) {
-        console.error(`CF API error: ${response.status} ${await response.text()}`);
-        return {
-            success: false
-        };
-    }
-
-    const res = await response.json();
-    if (res.result.answers.moderation.choice == 'none') {
-        return {
-            success: true,
-            allowed: true
+        if (!response.ok) {
+            console.error(`CF API error: ${response.status} ${await response.text()}`);
+            return {
+                success: false
+            };
         }
-    } else {
-        const violationKey = res.result?.answers?.moderation?.choice;
 
-        return {
-            success: true,
-            allowed: false,
-            // replace _ with space in the error message
-            violation: violationKey.replace('_', ' ')
-        };
+        const res = await response.json();
+        if (res.result.answers.moderation.choice == 'none') {
+            return {
+                success: true,
+                allowed: true
+            }
+        } else {
+            const violationKey = res.result?.answers?.moderation?.choice;
+
+            return {
+                success: true,
+                allowed: false,
+                // replace _ with space in the error message
+                violation: violationKey.replace('_', ' ')
+            };
+        }
+    } catch (e) {
+        console.error(e);
+        return { success: false };
     }
 }
