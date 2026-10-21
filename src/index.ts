@@ -27,14 +27,15 @@ const server = serve({
         style: "lowerCase"
       });
 
-      server.upgrade(req, {
+      if (!server.upgrade(req, {
         data: {
           // If the user already exists in client list, set auth as false so that a friendly disconnection error message can be sent after connection
           auth: !clients.some(e => e.name === name),
           name: name
         }
-      });
-
+      })) {
+        return new Response('Websocket upgrade failed', { status: 500 });
+      }
     },
     '/pfp/:name': (req) => {
       // Generate a custom avatar based on the name of the user
