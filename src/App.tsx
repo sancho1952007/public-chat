@@ -42,7 +42,7 @@ export function App() {
     ws.onmessage = (e) => {
       const message = JSON.parse(e.data);
       switch (message.type) {
-        case 'message':
+        case 'message': {
           const bottom = chatsSectionRef.current!.scrollHeight - chatsSectionRef.current!.scrollTop - chatsSectionRef.current!.clientHeight < 100;
 
           setMessages(msg => [...msg, {
@@ -57,34 +57,43 @@ export function App() {
           }
 
           break;
-        case 'current-user-context':
+        }
+
+        case 'current-user-context': {
           setMy({
             name: message.data.name
           });
           break;
-        case 'connected-users-list':
+        }
+
+        case 'connected-users-list': {
           setConnectedUsers(message.clients);
           break;
+        }
 
-        case 'messages-list':
+        case 'messages-list': {
           const messages = message.messages as string[];
           const parsed_messages = messages.map(msg => JSON.parse(msg));
           setMessages(parsed_messages);
           break;
+        }
 
-        case 'error':
+        case 'error': {
           toast.error(message.data.error_message, {
             description: message.data.error_desc
           });
           break;
+        }
 
-        case 'end-connection':
+        case 'end-connection': {
           ws.close();
           break;
+        }
 
-        default:
+        default: {
           console.log('Unhandled message type: ' + message.type);
           break;
+        }
       }
     }
 
