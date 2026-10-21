@@ -101,6 +101,7 @@ const server = serve({
         }));
 
         ws.close(1000);
+        return;
       }
 
       clients.push({
