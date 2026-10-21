@@ -78,6 +78,22 @@ export function App() {
           break;
         }
 
+        case 'user-joined': {
+          const user = message.name;
+          // Push new user to top of list
+          setConnectedUsers(e => [{
+            name: user
+          }, ...e]);
+          break;
+        }
+
+        case 'user-left': {
+          const user = message.name;
+          // Remove user from list when they leave
+          setConnectedUsers(e => e.filter(x => x.name !== user));
+          break;
+        }
+
         case 'error': {
           toast.error(message.data.error_message, {
             description: message.data.error_desc
