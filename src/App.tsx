@@ -138,7 +138,7 @@ export function App() {
             {
               messages.map(msg => {
                 return (
-                  <div id={msg.id} className={`chat ${msg.user === my.name ? 'sent' : 'received'}`}>
+                  <div key={msg.id} className={`chat ${msg.user === my.name ? 'sent' : 'received'}`}>
                     <div className="up">
                       <img src={`/pfp/${msg.user}`} alt="" className="pfp" />
                       <div className="name">{msg.user}</div>
