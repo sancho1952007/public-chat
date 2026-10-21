@@ -39,8 +39,6 @@ export async function Moderate(text: string): Promise<{
     }
 
     const res = await response.json();
-    console.log(JSON.stringify(res));
-
     if (res.result.answers.moderation.choice == 'none') {
         return {
             allowed: true
