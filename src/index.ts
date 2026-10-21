@@ -8,8 +8,6 @@ import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-
 
 const redis = new RedisClient(Bun.env.REDIS_URL);
 
-console.log(await redis.lrange("messages:list", 0, 20))
-
 const style = new Style(definition);
 let clients: {
   name: string
