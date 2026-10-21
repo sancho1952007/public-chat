@@ -106,7 +106,6 @@ export function App() {
   return (
     <div className="app">
       <Toaster />
-      {/* <div className="overlay"></div> */}
       <div className="main-header">
         <img onClick={() => setSideBarMobileExpanded(e => !e)}
           className='hamburger-menu'
