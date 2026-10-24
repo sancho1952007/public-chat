@@ -7,6 +7,7 @@ import definition from '@dicebear/styles/line-face.json' with { type: 'json' };
 import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator';
 
 const redis = new RedisClient(Bun.env.REDIS_URL);
+let lastMessages = (await redis.lrange("messages:list", 0, 19)).reverse();
 
 const style = new Style(definition);
 let clients: {
@@ -75,6 +76,11 @@ const server = serve({
           }
         }));
 
+        // Push message into lastMessages array
+        lastMessages.push(JSON.stringify({ id: msg_id, content: message, user: ws.data.name, ts: Date.now() }));
+        if (lastMessages.length > 20) lastMessages.shift();
+
+        // Store the messages to redis
         await redis.lpush("messages:list", JSON.stringify({
           id: msg_id,
           content: message,
@@ -137,7 +143,7 @@ const server = serve({
 
       ws.send(JSON.stringify({
         type: 'messages-list',
-        messages: (await redis.lrange("messages:list", 0, 19)).reverse() // Send last 20 messages
+        messages: lastMessages
       }));
 
       ws.subscribe("chat");
