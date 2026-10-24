@@ -119,6 +119,11 @@ body,
   border-radius: 50%;
 }
 
+.chat-area .chat .content {
+  font-size: 20px;
+  word-break: break-all;
+}
+
 .input-section {
   width: 100%;
   display: flex;

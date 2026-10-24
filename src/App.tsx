@@ -169,7 +169,7 @@ export function App() {
                     </div>
 
                     <div className="down">
-                      <div className="chat">{msg.content}</div>
+                      <div className="content">{msg.content}</div>
                     </div>
                   </div>
                 );
