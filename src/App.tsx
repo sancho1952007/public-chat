@@ -1,5 +1,5 @@
 import ReconnectingWebSocket from 'reconnecting-websocket';
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import "./index.css";
 import { toast, Toaster } from 'sonner';
 
@@ -32,6 +32,14 @@ export function App() {
     name: ''
   });
 
+  useLayoutEffect(() => {
+    const bottom = chatsSectionRef.current!.scrollHeight - chatsSectionRef.current!.scrollTop - chatsSectionRef.current!.clientHeight < 100;
+
+    if (bottom) {
+      chatsSectionRef.current!.scrollTop = chatsSectionRef.current!.scrollHeight;
+    }
+  }, [messages]);
+
   useEffect(() => {
     const ws = new ReconnectingWebSocket('/ws', [], {
       connectionTimeout: 1000,
@@ -43,19 +51,11 @@ export function App() {
       const message = JSON.parse(e.data);
       switch (message.type) {
         case 'message': {
-          const bottom = chatsSectionRef.current!.scrollHeight - chatsSectionRef.current!.scrollTop - chatsSectionRef.current!.clientHeight < 100;
-
           setMessages(msg => [...msg, {
             id: message.data.id,
             content: message.data.content,
             user: message.data.user
           }]);
-
-          // If user is at end of chat, scroll to the latest message
-          if (bottom) {
-            chatsSectionRef.current!.scrollTop = chatsSectionRef.current!.scrollHeight;
-          }
-
           break;
         }
 
