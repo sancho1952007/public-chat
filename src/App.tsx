@@ -7,6 +7,7 @@ export function App() {
   const socketRef = useRef<ReconnectingWebSocket | null>(null);
   const msgInputRef = useRef<HTMLInputElement>(null);
   const chatsSectionRef = useRef<HTMLDivElement>(null);
+  const shouldScrollRef = useRef(true);
   const [sideBarMobileExpanded, setSideBarMobileExpanded] = useState(false);
 
   const SendMessage = () => {
@@ -33,11 +34,10 @@ export function App() {
   });
 
   useLayoutEffect(() => {
-    const bottom = chatsSectionRef.current!.scrollHeight - chatsSectionRef.current!.scrollTop - chatsSectionRef.current!.clientHeight < 100;
-
-    if (bottom) {
-      chatsSectionRef.current!.scrollTop = chatsSectionRef.current!.scrollHeight;
+    if (shouldScrollRef.current && chatsSectionRef.current) {
+      chatsSectionRef.current.scrollTop = chatsSectionRef.current.scrollHeight;
     }
+    shouldScrollRef.current = false;
   }, [messages]);
 
   useEffect(() => {
@@ -51,6 +51,12 @@ export function App() {
       const message = JSON.parse(e.data);
       switch (message.type) {
         case 'message': {
+          if (chatsSectionRef.current) {
+            const el = chatsSectionRef.current;
+            const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+            shouldScrollRef.current = distanceFromBottom <= 100;
+          }
+
           setMessages(msg => [...msg, {
             id: message.data.id,
             content: message.data.content,
@@ -74,6 +80,7 @@ export function App() {
         case 'messages-list': {
           const messages = message.messages as string[];
           const parsed_messages = messages.map(msg => JSON.parse(msg));
+          shouldScrollRef.current = true;
           setMessages(parsed_messages);
           break;
         }
