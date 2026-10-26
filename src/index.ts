@@ -8,6 +8,7 @@ import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-
 
 const redis = new RedisClient(Bun.env.REDIS_URL);
 let lastMessages = (await redis.lrange("messages:list", 0, 19)).reverse();
+const limit = Bun.env.BUN_PUBLIC_MESSAGE_SIZE_LIMIT ? parseInt(Bun.env.BUN_PUBLIC_MESSAGE_SIZE_LIMIT) : 400;
 
 const style = new Style(definition);
 let clients: {
@@ -53,12 +54,12 @@ const server = serve({
 
   websocket: {
     async message(ws, message) {
-      if (message.length > 400) {
+      if (message.length > limit) {
         ws.send(JSON.stringify({
           type: 'error',
           data: {
             error_message: 'Message size warning',
-            error_desc: 'Limit of 400 characters extended!'
+            error_desc: `Limit of ${limit} characters extended!`
           }
         }));
         return;
