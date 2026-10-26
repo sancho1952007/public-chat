@@ -185,7 +185,7 @@ export function App() {
           </div>
 
           <div className="input-section">
-            <input onKeyDown={e => e.key === 'Enter' && SendMessage()} ref={msgInputRef} type="text" className="chat-input" placeholder="Enter your message..." />
+            <input onKeyDown={e => e.key === 'Enter' && SendMessage()} ref={msgInputRef} type="text" className="chat-input" placeholder="Enter your message..." maxLength={400} />
             <button className="btn-send" onClick={() => SendMessage()}>Send</button>
           </div>
         </div>
