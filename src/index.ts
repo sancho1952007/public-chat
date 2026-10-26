@@ -53,6 +53,16 @@ const server = serve({
 
   websocket: {
     async message(ws, message) {
+      if (message.length > 400) {
+        ws.send(JSON.stringify({
+          type: 'error',
+          data: {
+            error_message: 'Message size warning',
+            error_desc: 'Limit of 400 characters extended!'
+          }
+        }));
+        return;
+      }
       const moderation = await Moderate(message.toString());
       if (!moderation.success) {
         ws.send(JSON.stringify({
@@ -138,6 +148,7 @@ const server = serve({
         type: 'user-joined',
         name: ws.data.name
       }));
+
       ws.subscribe("user-joined");
       ws.subscribe("user-left");
 
