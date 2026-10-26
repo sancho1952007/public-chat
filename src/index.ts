@@ -8,7 +8,7 @@ import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-
 
 const redis = new RedisClient(Bun.env.REDIS_URL);
 let lastMessages = (await redis.lrange("messages:list", 0, 19)).reverse();
-const limit = Bun.env.BUN_PUBLIC_MESSAGE_SIZE_LIMIT ? parseInt(Bun.env.BUN_PUBLIC_MESSAGE_SIZE_LIMIT) : 400;
+const limit = Bun.env.BUN_PUBLIC_MESSAGE_SIZE_LIMIT as unknown as number || 400;
 
 const style = new Style(definition);
 let clients: {

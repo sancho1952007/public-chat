@@ -185,7 +185,7 @@ export function App() {
           </div>
 
           <div className="input-section">
-            <input onKeyDown={e => e.key === 'Enter' && SendMessage()} ref={msgInputRef} type="text" className="chat-input" placeholder="Enter your message..." maxLength={process.env.BUN_PUBLIC_MESSAGE_SIZE_LIMIT ? parseInt(process.env.BUN_PUBLIC_MESSAGE_SIZE_LIMIT) : 400} />
+            <input onKeyDown={e => e.key === 'Enter' && SendMessage()} ref={msgInputRef} type="text" className="chat-input" placeholder="Enter your message..." maxLength={process.env.BUN_PUBLIC_MESSAGE_SIZE_LIMIT as unknown as number || 400} />
             <button className="btn-send" onClick={() => SendMessage()}>Send</button>
           </div>
         </div>
