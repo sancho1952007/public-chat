@@ -59,7 +59,7 @@ const server = serve({
           type: 'error',
           data: {
             error_message: 'Message size warning',
-            error_desc: `Limit of ${limit} characters extended!`
+            error_desc: `Limit of ${limit} characters exceeded!`
           }
         }));
         return;
