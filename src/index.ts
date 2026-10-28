@@ -19,11 +19,12 @@ const server = serve({
   routes: {
     // Serve index.html for all unmatched routes.
     "/*": index,
-    '/ws': (req, server: Bun.Server<{ auth: boolean, name: string }>) => {
+    '/ws': (req, server: Bun.Server<{ auth: boolean, name: string, ip: string }>) => {
+      const ip = req.headers.get('CF-Connecting-IP') || '127.0.0.1';
       const name = uniqueNamesGenerator({
         dictionaries: [adjectives, colors, animals],
         separator: "-",
-        seed: req.headers.get('CF-Connecting-IP') || '127.0.0.1',
+        seed: ip,
         style: "lowerCase"
       });
 
@@ -31,7 +32,8 @@ const server = serve({
         data: {
           // If the user already exists in client list, set auth as false so that a friendly disconnection error message can be sent after connection
           auth: !clients.some(e => e.name === name),
-          name: name
+          name: name,
+          ip
         }
       })) {
         return new Response('Websocket upgrade failed', { status: 500 });
@@ -63,6 +65,24 @@ const server = serve({
           }
         }));
         return;
+      }
+
+      const currentRL = await redis.get(`rl:${ws.data.ip}`);
+      if (currentRL) {
+        if (parseInt(currentRL) < (Bun.env.RL_COUNT as unknown as number || 30)) { // Default 30 messages in the time period
+          redis.incr(`rl:${ws.data.ip}`);
+        } else {
+          ws.send(JSON.stringify({
+            type: 'error',
+            data: {
+              error_message: 'Rate limit exhausted',
+              error_desc: 'Your rate limit has been exhausted. Please wait before posting more messages'
+            }
+          }));
+          return;
+        }
+      } else {
+        await redis.set(`rl:${ws.data.ip}`, "1", 'EX', (Bun.env.RL_PERIOD as unknown as number) || 86400); // default 24 hour expiry of rate limit key
       }
       const moderation = await Moderate(message.toString());
       if (!moderation.success) {
@@ -184,4 +204,4 @@ const server = serve({
   },
 });
 
-console.log(`🚀 Server running at ${server.url}`);
+console.log(`Server running at ${server.url}`);
