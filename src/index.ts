@@ -70,7 +70,7 @@ const server = serve({
       const currentRL = await redis.get(`rl:${ws.data.ip}`);
       if (currentRL) {
         if (parseInt(currentRL) < (Bun.env.RL_COUNT as unknown as number || 30)) { // Default 30 messages in the time period
-          redis.incr(`rl:${ws.data.ip}`);
+          await redis.incr(`rl:${ws.data.ip}`);
         } else {
           ws.send(JSON.stringify({
             type: 'error',
