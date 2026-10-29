@@ -20,7 +20,7 @@ const server = serve({
     // Serve index.html for all unmatched routes.
     "/*": index,
     '/ws': (req, server: Bun.Server<{ auth: boolean, name: string, ip: string }>) => {
-      const ip = req.headers.get('CF-Connecting-IP') || '127.0.0.1';
+      const ip = req.headers.get('CF-Connecting-IP') || server.requestIP(req)?.address;
       const name = uniqueNamesGenerator({
         dictionaries: [adjectives, colors, animals],
         separator: "-",
