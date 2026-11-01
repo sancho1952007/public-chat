@@ -21,6 +21,7 @@ body,
 .main-header .hamburger-menu {
   width: 30px;
   padding-left: 5px;
+  display: none;
 }
 
 .container {
@@ -167,6 +168,10 @@ body,
 }
 
 @media screen and (max-width:500px) {
+  .main-header .hamburger-menu {
+    display: block;
+  }
+
   .sidebar {
     width: 60px;
     min-width: 0;
