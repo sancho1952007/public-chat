@@ -1,7 +1,7 @@
 # Public Chat
 A completely free & anonymous global chat app with smart instant moderation.
 
-![](./screenshots/preview.png)
+![A screenshot of the website](./screenshots/preview.png)
 
 ### Purpose
 This app enables the world to discuss on a single topic at a time. It's made to enable everyone discussing topics together in a safe and open environment.
