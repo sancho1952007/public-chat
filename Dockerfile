@@ -5,7 +5,9 @@ COPY bunfig.toml ./
 COPY package.json bun.lock ./
 RUN bun i --frozen-lockfile --production
 
+COPY tsconfig.json ./
 COPY src/ ./src
 
 USER bun
+EXPOSE 3000
 CMD ["bun", "start"]
