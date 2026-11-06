@@ -67,9 +67,10 @@ const server = serve({
         return;
       }
 
+      const badMessageKey = `bad-messages:${ws.data.ip}`;
       const [currentRL, badMessages] = await Promise.all([
         redis.get(`rl:${ws.data.ip}`),
-        redis.get(`bad-messages:${ws.data.ip}`)
+        redis.get(badMessageKey)
       ]);
 
       if (currentRL) {
@@ -96,7 +97,7 @@ const server = serve({
             type: 'error',
             data: {
               error_message: 'You have been banned',
-              error_desc: `You cannot send messages for ${await redis.ttl(`bad-messages:${ws.data.ip}`)} seconds`
+              error_desc: `You cannot send messages for ${await redis.ttl(badMessageKey)} seconds`
             }
           }));
           return;
@@ -143,7 +144,6 @@ const server = serve({
         await redis.ltrim("messages:list", 0, ((Bun.env.MAX_MESSAGES as unknown as number) - 1 || 29));
       } else {
         // Check if user has already posted bad messages and if so, increment it if not, add user to the bad-boy-list
-        const key = `bad-messages:${ws.data.ip}`;
         if (badMessages) {
           // If user can't post any further messages, tell them in advance
           if (parseInt(badMessages) >= (Bun.env.BAD_MESSAGES_LIMIT as unknown as number || 3) - 1) {
@@ -151,12 +151,10 @@ const server = serve({
               type: 'error',
               data: {
                 error_message: 'You have been banned',
-                error_desc: `You cannot send messages for ${await redis.ttl(key)} seconds`
+                error_desc: `You cannot send messages for ${await redis.ttl(badMessageKey)} seconds`
               }
             }));
-            await redis.incr(key);
           } else {
-            await redis.incr(key);
             ws.send(JSON.stringify({
               type: 'error',
               data: {
@@ -166,7 +164,6 @@ const server = serve({
             }));
           }
         } else {
-          await redis.set(key, '1', 'EX', Bun.env.BAD_MESSAGES_BAN_PERIOD as unknown as number || 86400);
           ws.send(JSON.stringify({
             type: 'error',
             data: {
@@ -174,6 +171,13 @@ const server = serve({
               error_desc: 'Your message was blocked for ' + moderation.violation + '. Repeated rule breaking will lead to a 24h ban.'
             }
           }));
+        }
+
+        // Increment/create a bad message key in Redis for the user
+        const badMessageKeyIncrement = await redis.incr(badMessageKey);
+        // If the returned value is 1 that means a new record was created hence we set a TTL to that key
+        if (badMessageKeyIncrement === 1) {
+          await redis.expire(badMessageKey, parseInt(Bun.env.BAD_MESSAGES_BAN_PERIOD as unknown as string) || 86400);
         }
       }
     },
