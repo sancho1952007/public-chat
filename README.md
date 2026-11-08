@@ -46,6 +46,7 @@ The app & database is completely hosted on my own server located in Frankfurt, G
 | CF_ACC_ID | string | ✅ | - | Cloudflare Account ID |
 | CF_AI_API_KEY | string | ✅ | - | Cloudflare Workers AI API key |
 | REDIS_URL | string | ✅ | - | Redis connection URL |
+| IP_HASH_SECRET | string | ✅ | - | The salt used at the time of IP address hashing. Can be easily generated using `openssl rand -hex 32` |
 | MAX_MESSAGES | number | ❌ | 30 | Maximum number of messages retrieved |
 | BUN_PUBLIC_MESSAGE_SIZE_LIMIT | number | ❌ | 400 | Maximum individual message characters |
 | RL_COUNT | number | ❌ | 30 | Number of messages send in the rate limit period |
