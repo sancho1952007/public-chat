@@ -24,7 +24,7 @@ const server = serve({
       const name = uniqueNamesGenerator({
         dictionaries: [adjectives, colors, animals],
         separator: "-",
-        seed: ip,
+        seed: new Bun.CryptoHasher("sha256", Bun.env.HASH_SECRET).update(ip).digest('hex'),
         style: "lowerCase"
       });
 
