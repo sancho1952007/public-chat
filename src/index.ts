@@ -24,7 +24,7 @@ const server = serve({
       const name = uniqueNamesGenerator({
         dictionaries: [adjectives, colors, animals],
         separator: "-",
-        seed: ip,
+        seed: new Bun.CryptoHasher("sha256", Bun.env.HASH_SECRET).update(ip).digest('hex'),
         style: "lowerCase"
       });
 
@@ -67,15 +67,16 @@ const server = serve({
         return;
       }
 
-      const badMessageKey = `bad-messages:${ws.data.ip}`;
+      const badMessageKey = `bad-messages:${ws.data.name}`;
+      const rateLimitKey = `rl:${ws.data.name}`;
       const [currentRL, badMessages] = await Promise.all([
-        redis.get(`rl:${ws.data.ip}`),
+        redis.get(rateLimitKey),
         redis.get(badMessageKey)
       ]);
 
       if (currentRL) {
         if (parseInt(currentRL) < (Bun.env.RL_COUNT as unknown as number || 30)) { // Default 30 messages in the time period
-          await redis.incr(`rl:${ws.data.ip}`);
+          await redis.incr(rateLimitKey);
         } else {
           ws.send(JSON.stringify({
             type: 'error',
@@ -87,7 +88,7 @@ const server = serve({
           return;
         }
       } else {
-        await redis.set(`rl:${ws.data.ip}`, "1", 'EX', (Bun.env.RL_PERIOD as unknown as number) || 86400); // default 24 hour expiry of rate limit key
+        await redis.set(rateLimitKey, "1", 'EX', (Bun.env.RL_PERIOD as unknown as number) || 86400); // default 24 hour expiry of rate limit key
       }
 
       // If user has posted too many bad messages earlier don't allow user from posting more messages until ban expires
