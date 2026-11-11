@@ -1,10 +1,29 @@
 import { serve } from "bun";
 import index from "./index.html";
 import { RedisClient } from "bun";
+import { safeParse } from 'valibot';
 import { Moderate } from "./utils/moderate";
 import { Style, Avatar } from '@dicebear/core';
 import definition from '@dicebear/styles/line-face.json' with { type: 'json' };
 import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator';
+import { env_vars_schema } from "./utils/env-vars-schema";
+
+const envVarsTest = safeParse(env_vars_schema, Bun.env);
+if (!envVarsTest.success) {
+  envVarsTest.issues.map(issue => {
+    if (issue.received === 'undefined') {
+      console.error(`Environment variable ${issue.path![0].key} is required but missing`);
+    } else if (issue.received === 'NaN') {
+      console.error(`Environment variable ${issue.path![0].key} is expected to be a number but received a different data type instead`);
+    } else if (issue.type === 'regex') {
+      console.error(`Environment variable ${issue.path![0].key} received an error: ${issue.message}`);
+    } else {
+      console.error(`Environment variable ${issue.path![0].key} received an error: ${issue.message}`);
+    }
+  });
+
+  process.exit(1);
+}
 
 const redis = new RedisClient(Bun.env.REDIS_URL);
 let lastMessages = (await redis.lrange("messages:list", 0, 19)).reverse();
