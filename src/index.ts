@@ -1,14 +1,35 @@
 import { serve } from "bun";
 import index from "./index.html";
 import { RedisClient } from "bun";
+import { safeParse } from 'valibot';
 import { Moderate } from "./utils/moderate";
 import { Style, Avatar } from '@dicebear/core';
 import definition from '@dicebear/styles/line-face.json' with { type: 'json' };
 import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator';
+import { env_vars_schema } from "./utils/env-vars-schema";
 
-const redis = new RedisClient(Bun.env.REDIS_URL);
+const envVars = safeParse(env_vars_schema, Bun.env);
+if (!envVars.success) {
+  envVars.issues.map(issue => {
+    if (issue.received === 'undefined') {
+      console.error(`Environment variable ${issue.path![0].key} is required but missing`);
+    } else if (issue.received === 'NaN') {
+      console.error(`Environment variable ${issue.path![0].key} is expected to be a number but received a different data type instead`);
+    } else if (issue.type === 'regex') {
+      console.error(`Environment variable ${issue.path![0].key} received an error: ${issue.message}`);
+    } else if (issue.type === 'safe_integer') {
+      console.error(`Environment variable ${issue.path![0].key} has to be an integer (non-decimal value)`);
+    } else {
+      console.error(`Environment variable ${issue.path![0].key} received an error: ${issue.message}`);
+    }
+  });
+
+  process.exit(1);
+}
+
+const redis = new RedisClient(envVars.output.REDIS_URL);
 let lastMessages = (await redis.lrange("messages:list", 0, 19)).reverse();
-const limit = Bun.env.BUN_PUBLIC_MESSAGE_SIZE_LIMIT as unknown as number || 400;
+const limit = envVars.output.BUN_PUBLIC_MESSAGE_SIZE_LIMIT;
 
 const style = new Style(definition);
 let clients: {
@@ -24,7 +45,7 @@ const server = serve({
       const name = uniqueNamesGenerator({
         dictionaries: [adjectives, colors, animals],
         separator: "-",
-        seed: ip,
+        seed: new Bun.CryptoHasher("sha256", envVars.output.IP_HASH_SECRET).update(ip).digest('hex'),
         style: "lowerCase"
       });
 
@@ -67,15 +88,16 @@ const server = serve({
         return;
       }
 
-      const badMessageKey = `bad-messages:${ws.data.ip}`;
+      const badMessageKey = `bad-messages:${ws.data.name}`;
+      const rateLimitKey = `rl:${ws.data.name}`;
       const [currentRL, badMessages] = await Promise.all([
-        redis.get(`rl:${ws.data.ip}`),
+        redis.get(rateLimitKey),
         redis.get(badMessageKey)
       ]);
 
       if (currentRL) {
-        if (parseInt(currentRL) < (Bun.env.RL_COUNT as unknown as number || 30)) { // Default 30 messages in the time period
-          await redis.incr(`rl:${ws.data.ip}`);
+        if (parseInt(currentRL) < envVars.output.RL_COUNT) { // Default 30 messages in the time period
+          await redis.incr(rateLimitKey);
         } else {
           ws.send(JSON.stringify({
             type: 'error',
@@ -87,12 +109,12 @@ const server = serve({
           return;
         }
       } else {
-        await redis.set(`rl:${ws.data.ip}`, "1", 'EX', (Bun.env.RL_PERIOD as unknown as number) || 86400); // default 24 hour expiry of rate limit key
+        await redis.set(rateLimitKey, "1", 'EX', envVars.output.RL_PERIOD); // default 24 hour expiry of rate limit key
       }
 
       // If user has posted too many bad messages earlier don't allow user from posting more messages until ban expires
       if (badMessages) {
-        if (parseInt(badMessages) >= (Bun.env.BAD_MESSAGES_LIMIT as unknown as number || 3)) {
+        if (parseInt(badMessages) >= envVars.output.BAD_MESSAGES_LIMIT) {
           ws.send(JSON.stringify({
             type: 'error',
             data: {
@@ -141,12 +163,12 @@ const server = serve({
         }));
 
         // Keep last 30 messages by default or more as per supplied values
-        await redis.ltrim("messages:list", 0, ((Bun.env.MAX_MESSAGES as unknown as number) - 1 || 29));
+        await redis.ltrim("messages:list", 0, (envVars.output.MAX_MESSAGES - 1));
       } else {
         // Check if user has already posted bad messages and if so, increment it if not, add user to the bad-boy-list
         if (badMessages) {
           // If user can't post any further messages, tell them in advance
-          if (parseInt(badMessages) >= (Bun.env.BAD_MESSAGES_LIMIT as unknown as number || 3) - 1) {
+          if (parseInt(badMessages) >= (envVars.output.BAD_MESSAGES_LIMIT - 1)) {
             ws.send(JSON.stringify({
               type: 'error',
               data: {
@@ -177,7 +199,7 @@ const server = serve({
         const badMessageKeyIncrement = await redis.incr(badMessageKey);
         // If the returned value is 1 that means a new record was created hence we set a TTL to that key
         if (badMessageKeyIncrement === 1) {
-          await redis.expire(badMessageKey, parseInt(Bun.env.BAD_MESSAGES_BAN_PERIOD as unknown as string) || 86400);
+          await redis.expire(badMessageKey, envVars.output.BAD_MESSAGES_BAN_PERIOD);
         }
       }
     },

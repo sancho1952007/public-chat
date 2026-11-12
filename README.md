@@ -31,9 +31,29 @@ Preview URL: https://public-chat-preview.sg-app.com
 Production URL: https://public-chat.sg-app.com
 
 ### Deployment
+This app can be easily deployed using Docker
+
+Requirements:
+- Redis Server
+- Docker
+
+Current online hosted version:
 The app & database is completely hosted on my own server located in Frankfurt, Germany.  
 
-It is hosted using Docker on a self-hosted PaaS.
+### Environment Variables
+| Name | Type | Required | Default | Purpose |
+| - | - | - | - | - |
+| CF_ACC_ID | string | ✅ | - | Cloudflare Account ID |
+| CF_AI_API_KEY | string | ✅ | - | Cloudflare Workers AI API key |
+| REDIS_URL | string | ✅ | - | Redis connection URL |
+| IP_HASH_SECRET | string | ✅ | - | The salt used at the time of IP address hashing. Can be easily generated using `openssl rand -hex 32` |
+| MAX_MESSAGES | number | ❌ | 30 | Maximum number of messages retrieved |
+| BUN_PUBLIC_MESSAGE_SIZE_LIMIT | number | ❌ | 400 | Maximum individual message characters |
+| RL_COUNT | number | ❌ | 30 | Number of messages send in the rate limit period |
+| RL_PERIOD | number | ❌ | 86400 (24 hours) | Rate limit period in seconds |
+| RL_PERIOD | number | ❌ | 86400 (24 hours) | Rate limit period in seconds |
+| BAD_MESSAGES_LIMIT | number | ❌ | 3 | Number of messages after which ban will be triggered |
+| BAD_MESSAGES_BAN_PERIOD | number | ❌ | 86400 (24 hours) | Amount of time the user will be banned for in seconds |
 
 ### Disclosure
 No AI has been used in the development of this application. It's completely handwritten by me. This is one of my projects I built to prove I can code both with and without AI, this one being a non-AI one.
