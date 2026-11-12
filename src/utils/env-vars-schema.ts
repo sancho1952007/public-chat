@@ -43,6 +43,7 @@ const env_vars_schema = v.object({
             v.string(),
             v.toNumber(),
             v.number(),
+            v.safeInteger(),
             v.minValue(1)
         ),
         "30"
@@ -62,7 +63,8 @@ const env_vars_schema = v.object({
             v.string(),
             v.toNumber(),
             v.number(),
-            v.safeInteger()
+            v.safeInteger(),
+            v.minValue(1)
         ),
         "3"
     ),
