@@ -17,6 +17,8 @@ if (!envVars.success) {
       console.error(`Environment variable ${issue.path![0].key} is expected to be a number but received a different data type instead`);
     } else if (issue.type === 'regex') {
       console.error(`Environment variable ${issue.path![0].key} received an error: ${issue.message}`);
+    } else if (issue.type === 'safe_integer') {
+      console.error(`Environment variable ${issue.path![0].key} has to be an integer (non-decimal value)`);
     } else {
       console.error(`Environment variable ${issue.path![0].key} received an error: ${issue.message}`);
     }
