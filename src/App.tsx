@@ -2,6 +2,7 @@ import ReconnectingWebSocket from 'reconnecting-websocket';
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import "./index.css";
 import { toast, Toaster } from 'sonner';
+import UmamiAnalytics from './utils/analytics';
 
 export function App() {
   const socketRef = useRef<ReconnectingWebSocket | null>(null);
@@ -14,6 +15,11 @@ export function App() {
     if (msgInputRef.current!.value.trim() !== '') {
       socketRef.current?.send(msgInputRef.current!.value);
       msgInputRef.current!.value = '';
+
+      // Silently fail if Umami is not initialized
+      try {
+        (window as any).umami.track('Send message');
+      } catch { }
     }
   }
 
@@ -69,6 +75,12 @@ export function App() {
           setMy({
             name: message.data.name
           });
+
+          // Silently fail if Umami is not initialized
+          try {
+            (window as any).umami.identify(message.data.name);
+          } catch { }
+
           break;
         }
 
@@ -137,6 +149,7 @@ export function App() {
 
   return (
     <div className="app">
+      <UmamiAnalytics />
       <Toaster />
       <div className="main-header">
         <img onClick={() => setSideBarMobileExpanded(e => !e)}

@@ -1,11 +1,11 @@
-import { serve } from "bun";
+import { env, serve } from "bun";
 import index from "./index.html";
 import { RedisClient } from "bun";
 import { safeParse } from 'valibot';
 import { Moderate } from "./utils/moderate";
 import { Style, Avatar } from '@dicebear/core';
 import definition from '@dicebear/styles/line-face.json' with { type: 'json' };
-import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator';
+import { uniqueNamesGenerator, adjectives, colors, animals, names } from 'unique-names-generator';
 import { env_vars_schema } from "./utils/env-vars-schema";
 
 const envVars = safeParse(env_vars_schema, Bun.env);
@@ -27,6 +27,12 @@ if (!envVars.success) {
   process.exit(1);
 }
 
+let analytics_url: null | string;
+if (envVars.output.BUN_PUBLIC_UMAMI_SCRIPT_URL && envVars.output.BUN_PUBLIC_UMAMI_WEBSITE_ID) {
+  const analytics_script_url = new URL(envVars.output.BUN_PUBLIC_UMAMI_SCRIPT_URL);
+  analytics_url = `${analytics_script_url.protocol}//${analytics_script_url.host}/api/send`;
+}
+
 const redis = new RedisClient(envVars.output.REDIS_URL);
 let lastMessages = (await redis.lrange("messages:list", 0, 19)).reverse();
 const limit = envVars.output.BUN_PUBLIC_MESSAGE_SIZE_LIMIT;
@@ -43,7 +49,7 @@ const server = serve({
     '/ws': (req, server: Bun.Server<{ auth: boolean, name: string, ip: string }>) => {
       const ip = req.headers.get('CF-Connecting-IP') || server.requestIP(req)?.address || '127.0.0.1';
       const name = uniqueNamesGenerator({
-        dictionaries: [adjectives, colors, animals],
+        dictionaries: [adjectives, colors, animals, names],
         separator: "-",
         seed: new Bun.CryptoHasher("sha256", envVars.output.IP_HASH_SECRET).update(ip).digest('hex'),
         style: "lowerCase"
@@ -165,6 +171,37 @@ const server = serve({
         // Keep last 30 messages by default or more as per supplied values
         await redis.ltrim("messages:list", 0, (envVars.output.MAX_MESSAGES - 1));
       } else {
+        if (analytics_url) {
+          fetch(analytics_url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36"
+            },
+            body: JSON.stringify({
+              type: "event",
+              payload: {
+                website: envVars.output.BUN_PUBLIC_UMAMI_WEBSITE_ID,
+                name: "bad-message-blocked",
+                id: ws.data.name,
+              },
+            }),
+          })
+            .then(res => {
+              console.log(res.status, res.statusText);
+              if (!res.ok) {
+                console.error(`Umami tracking failed: ${res.status} ${res.statusText}`);
+              }
+              return res.text();
+            })
+            .then(data => {
+              console.log(data);
+            })
+            .catch(e => {
+              console.error("Error sending event to Umami:", e);
+            });
+        }
+
         // Check if user has already posted bad messages and if so, increment it if not, add user to the bad-boy-list
         if (badMessages) {
           // If user can't post any further messages, tell them in advance
