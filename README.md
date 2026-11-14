@@ -57,5 +57,8 @@ The app & database is completely hosted on my own server located in Frankfurt, G
 | BUN_PUBLIC_UMAMI_SCRIPT_URL | url | ❌ | - | Umami analytics script URL (optional) |
 | BUN_PUBLIC_UMAMI_WEBSITE_ID | string | ❌ | - | Umami analytics website id (optional) |
 
+> [!NOTE]
+> If you're not using an optional environment variable, do not add it at all. Do not add it and keep it's value blank as it will cause an error.
+
 ### Disclosure
 No AI has been used in the development of this application. It's completely handwritten by me. This is one of my projects I built to prove I can code both with and without AI, this one being a non-AI one.
