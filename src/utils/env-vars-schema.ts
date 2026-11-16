@@ -76,7 +76,16 @@ const env_vars_schema = v.object({
             v.minValue(1)
         ),
         "86400"
-    )
+    ),
+    BUN_PUBLIC_UMAMI_SCRIPT_URL: v.optional(
+        v.pipe(
+            v.string(),
+            v.url()
+        )
+    ),
+    BUN_PUBLIC_UMAMI_WEBSITE_ID: v.optional(
+        v.string(),
+    ),
 });
 
 export { env_vars_schema };
