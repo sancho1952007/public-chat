@@ -1,6 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-export default function UmamiAnalytics() {
+export default function UmamiAnalytics({ name }: {
+    name: string
+}) {
+    const [ready, setReady] = useState(false);
     useEffect(() => {
         try {
             const umami_site_id = process.env.BUN_PUBLIC_UMAMI_WEBSITE_ID;
@@ -12,6 +15,12 @@ export default function UmamiAnalytics() {
                 analytics_script.src = umami_script_url;
                 analytics_script.setAttribute('data-website-id', umami_site_id);
                 analytics_script.defer = true;
+                analytics_script.onload = () => {
+                    if ((window as any).umami) {
+                        setReady(true);
+                    }
+                }
+
                 document.head.appendChild(analytics_script);
             }
         } catch (e) {
@@ -21,5 +30,12 @@ export default function UmamiAnalytics() {
             }
         }
     }, []);
+
+    useEffect(() => {
+        if (ready && name && typeof (window as any).umami?.identify === 'function') {
+            (window as any).umami.identify(name);
+        }
+    }, [ready, name]);
+
     return null;
 }

@@ -75,12 +75,6 @@ export function App() {
           setMy({
             name: message.data.name
           });
-
-          // Silently fail if Umami is not initialized
-          try {
-            (window as any).umami.identify(message.data.name);
-          } catch { }
-
           break;
         }
 
@@ -149,7 +143,7 @@ export function App() {
 
   return (
     <div className="app">
-      <UmamiAnalytics />
+      <UmamiAnalytics name={my.name} />
       <Toaster />
       <div className="main-header">
         <img onClick={() => setSideBarMobileExpanded(e => !e)}
