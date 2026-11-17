@@ -127,7 +127,7 @@ export function App() {
     }
 
     ws.onerror = (e) => {
-      toast.error('Websocket errored out: ' + e);
+      toast.error('Websocket errored out: ' + JSON.stringify(e));
     }
 
     ws.onclose = () => {
