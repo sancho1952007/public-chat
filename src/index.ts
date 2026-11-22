@@ -4,9 +4,9 @@ import { RedisClient } from "bun";
 import { safeParse } from 'valibot';
 import { Moderate } from "./utils/moderate";
 import { Style, Avatar } from '@dicebear/core';
+import { env_vars_schema } from "./utils/env-vars-schema";
 import definition from '@dicebear/styles/line-face.json' with { type: 'json' };
 import { uniqueNamesGenerator, adjectives, colors, animals, names } from 'unique-names-generator';
-import { env_vars_schema } from "./utils/env-vars-schema";
 
 const envVars = safeParse(env_vars_schema, Bun.env);
 if (!envVars.success) {
@@ -47,9 +47,18 @@ const server = serve({
     // Serve index.html for all unmatched routes.
     "/*": index,
     '/ws': (req, server: Bun.Server<{ auth: boolean, name: string, ip: string }>) => {
+      const origin = req.headers.get("origin");
+      if (!origin) {
+        return new Response('Websocket upgrade failed: Invalid origin', { status: 403 });
+      }
+      const originHost = new URL(origin).hostname;
+      if (originHost !== envVars.output.HOST) {
+        return new Response('Websocket upgrade failed: Invalid origin', { status: 403 });
+      }
+      console.log(originHost);
       const ip = req.headers.get('CF-Connecting-IP') || server.requestIP(req)?.address || '127.0.0.1';
       const name = uniqueNamesGenerator({
-        dictionaries: [adjectives, colors, animals, names],
+        dictionaries: [adjectives, colors, animals, names, names],
         separator: "-",
         seed: new Bun.CryptoHasher("sha256", envVars.output.IP_HASH_SECRET).update(ip).digest('hex'),
         style: "lowerCase"
@@ -303,7 +312,6 @@ const server = serve({
       }));
     },
   },
-
   development: process.env.NODE_ENV !== "production" && {
     // Enable browser hot reloading in development
     hmr: true,

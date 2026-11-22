@@ -1,6 +1,14 @@
 import * as v from 'valibot';
 
 const env_vars_schema = v.object({
+    HOST: v.union(
+        [
+            v.literal('localhost'),
+            v.pipe(v.string(), v.domain()),
+            v.pipe(v.string(), v.ip()),
+        ],
+        'Invalid Host'
+    ),
     CF_ACC_ID: v.pipe(
         v.string(),
         v.nonEmpty(),
