@@ -92,6 +92,17 @@ const server = serve({
 
   websocket: {
     async message(ws, message) {
+      if (typeof message !== 'string') {
+        ws.send(JSON.stringify({
+          type: 'error',
+          data: {
+            error_message: 'Warning',
+            error_desc: `Received non-text content which is not allowed!`
+          }
+        }));
+        return;
+      }
+
       if (message.length > limit) {
         ws.send(JSON.stringify({
           type: 'error',
