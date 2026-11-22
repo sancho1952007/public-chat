@@ -57,10 +57,11 @@ const server = serve({
       }
       console.log(originHost);
       const ip = req.headers.get('CF-Connecting-IP') || server.requestIP(req)?.address || '127.0.0.1';
+      const digest = new Bun.CryptoHasher("sha256", envVars.output.IP_HASH_SECRET).update(ip).digest('hex');
       const name = uniqueNamesGenerator({
         dictionaries: [adjectives, colors, animals, names, names],
         separator: "-",
-        seed: new Bun.CryptoHasher("sha256", envVars.output.IP_HASH_SECRET).update(ip).digest('hex'),
+        seed: Number.parseInt(digest.slice(0, 8), 16),
         style: "lowerCase"
       });
 
