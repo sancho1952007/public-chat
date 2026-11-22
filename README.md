@@ -43,6 +43,7 @@ The app & database is completely hosted on my own server located in Frankfurt, G
 ### Environment Variables
 | Name | Type | Required | Default | Purpose |
 | - | - | - | - | - |
+| HOST | string | ✅ | - | Domain where the website is hosted (without http://, https:// or any pathname) |
 | CF_ACC_ID | string | ✅ | - | Cloudflare Account ID |
 | CF_AI_API_KEY | string | ✅ | - | Cloudflare Workers AI API key |
 | REDIS_URL | string | ✅ | - | Redis connection URL |
