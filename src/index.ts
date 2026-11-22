@@ -51,13 +51,15 @@ const server = serve({
       if (!origin) {
         return new Response('Websocket upgrade failed: Invalid origin', { status: 403 });
       }
+
       const originHost = new URL(origin).hostname;
       if (originHost !== envVars.output.HOST) {
         return new Response('Websocket upgrade failed: Invalid origin', { status: 403 });
       }
-      console.log(originHost);
+
       const ip = req.headers.get('CF-Connecting-IP') || server.requestIP(req)?.address || '127.0.0.1';
       const digest = new Bun.CryptoHasher("sha256", envVars.output.IP_HASH_SECRET).update(ip).digest('hex');
+
       const name = uniqueNamesGenerator({
         dictionaries: [adjectives, colors, animals, names, names],
         separator: "-",
@@ -117,26 +119,18 @@ const server = serve({
 
       const badMessageKey = `bad-messages:${ws.data.name}`;
       const rateLimitKey = `rl:${ws.data.name}`;
-      const [currentRL, badMessages] = await Promise.all([
-        redis.get(rateLimitKey),
-        redis.get(badMessageKey)
-      ]);
+      const badMessages = await redis.get(badMessageKey);
 
-      if (currentRL) {
-        if (parseInt(currentRL) < envVars.output.RL_COUNT) { // Default 30 messages in the time period
-          await redis.incr(rateLimitKey);
-        } else {
-          ws.send(JSON.stringify({
-            type: 'error',
-            data: {
-              error_message: 'Rate limit exhausted',
-              error_desc: 'Your rate limit has been exhausted. Please wait before posting more messages'
-            }
-          }));
-          return;
-        }
-      } else {
-        await redis.set(rateLimitKey, "1", 'EX', envVars.output.RL_PERIOD); // default 24 hour expiry of rate limit key
+      const rateLimitCount = await redis.incr(rateLimitKey);
+      if (rateLimitCount === 1) await redis.expire(rateLimitKey, envVars.output.RL_PERIOD);
+      if (rateLimitCount > envVars.output.RL_COUNT) {
+        ws.send(JSON.stringify({
+          type: 'error', data: {
+            error_message: 'Rate limit exhausted',
+            error_desc: 'Your rate limit has been exhausted. Please wait before posting more messages'
+          }
+        }));
+        return;
       }
 
       // If user has posted too many bad messages earlier don't allow user from posting more messages until ban expires
@@ -256,9 +250,7 @@ const server = serve({
         // Increment/create a bad message key in Redis for the user
         const badMessageKeyIncrement = await redis.incr(badMessageKey);
         // If the returned value is 1 that means a new record was created hence we set a TTL to that key
-        if (badMessageKeyIncrement === 1) {
-          await redis.expire(badMessageKey, envVars.output.BAD_MESSAGES_BAN_PERIOD);
-        }
+        if (badMessageKeyIncrement === 1) await redis.expire(badMessageKey, envVars.output.BAD_MESSAGES_BAN_PERIOD);
       }
     },
     async open(ws) {
