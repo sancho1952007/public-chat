@@ -52,7 +52,6 @@ The app & database is completely hosted on my own server located in Frankfurt, G
 | BUN_PUBLIC_MESSAGE_SIZE_LIMIT | number | ❌ | 400 | Maximum individual message characters |
 | RL_COUNT | number | ❌ | 30 | Number of messages send in the rate limit period |
 | RL_PERIOD | number | ❌ | 86400 (24 hours) | Rate limit period in seconds |
-| RL_PERIOD | number | ❌ | 86400 (24 hours) | Rate limit period in seconds |
 | BAD_MESSAGES_LIMIT | number | ❌ | 3 | Number of messages after which ban will be triggered |
 | BAD_MESSAGES_BAN_PERIOD | number | ❌ | 86400 (24 hours) | Amount of time the user will be banned for in seconds |
 | BUN_PUBLIC_UMAMI_SCRIPT_URL | url | ❌ | - | Umami analytics script URL (optional) |
