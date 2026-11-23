@@ -37,6 +37,8 @@ const redis = new RedisClient(envVars.output.REDIS_URL);
 let lastMessages = (await redis.lrange("messages:list", 0, 19)).reverse();
 const limit = envVars.output.BUN_PUBLIC_MESSAGE_SIZE_LIMIT;
 
+const subscriber = await redis.duplicate();
+
 const style = new Style(definition);
 let clients: {
   name: string
@@ -162,7 +164,7 @@ const server = serve({
       if (moderation.allowed) {
         const msg_id = Bun.randomUUIDv7();
         const ts = Date.now();
-        server.publish('chat', JSON.stringify({
+        redis.publish('chat', JSON.stringify({
           type: 'message',
           data: {
             id: msg_id,
@@ -255,6 +257,10 @@ const server = serve({
       }
     },
     async open(ws) {
+      subscriber.subscribe(['chat', 'user-joined', 'user-left'], e => {
+        ws.send(e);
+      });
+
       // When the auth is false as stated in above code, disconnect the user from the ws connection after sending a friendly error message
       if (ws.data.auth === false) {
         ws.send(JSON.stringify({
@@ -288,7 +294,7 @@ const server = serve({
         clients
       }));
 
-      server.publish('user-joined', JSON.stringify({
+      redis.publish('user-joined', JSON.stringify({
         type: 'user-joined',
         name: ws.data.name
       }));
@@ -311,7 +317,7 @@ const server = serve({
 
       clients = clients.filter(e => e.name !== ws.data.name);
 
-      server.publish('user-left', JSON.stringify({
+      redis.publish('user-left', JSON.stringify({
         type: 'user-left',
         name: ws.data.name
       }));
