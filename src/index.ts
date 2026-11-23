@@ -161,18 +161,19 @@ const server = serve({
 
       if (moderation.allowed) {
         const msg_id = Bun.randomUUIDv7();
+        const ts = Date.now();
         server.publish('chat', JSON.stringify({
           type: 'message',
           data: {
             id: msg_id,
             content: message,
             user: ws.data.name,
-            ts: Date.now()
+            ts: ts
           }
         }));
 
         // Push message into lastMessages array
-        lastMessages.push(JSON.stringify({ id: msg_id, content: message, user: ws.data.name, ts: Date.now() }));
+        lastMessages.push(JSON.stringify({ id: msg_id, content: message, user: ws.data.name, ts: ts }));
         if (lastMessages.length > 20) lastMessages.shift();
 
         // Store the messages to redis
@@ -180,7 +181,7 @@ const server = serve({
           id: msg_id,
           content: message,
           user: ws.data.name,
-          ts: Date.now()
+          ts: ts
         }));
 
         // Keep last 30 messages by default or more as per supplied values
