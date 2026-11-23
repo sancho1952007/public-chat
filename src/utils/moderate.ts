@@ -60,7 +60,7 @@ export async function Moderate(text: string): Promise<{
                 success: true,
                 allowed: false,
                 // replace _ with space in the error message
-                violation: violationKey.replace('_', ' ')
+                violation: violationKey.replaceAll('_', ' ')
             };
         }
     } catch (e) {
