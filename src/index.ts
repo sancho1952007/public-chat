@@ -34,7 +34,7 @@ if (envVars.output.BUN_PUBLIC_UMAMI_SCRIPT_URL && envVars.output.BUN_PUBLIC_UMAM
 }
 
 const redis = new RedisClient(envVars.output.REDIS_URL);
-let lastMessages = (await redis.lrange("messages:list", 0, 19)).reverse();
+let lastMessages = (await redis.lrange("messages:list", 0, envVars.output.MAX_MESSAGES)).reverse();
 const limit = envVars.output.BUN_PUBLIC_MESSAGE_SIZE_LIMIT;
 
 const subscriber = await redis.duplicate();
@@ -176,7 +176,7 @@ const server = serve({
 
         // Push message into lastMessages array
         lastMessages.push(JSON.stringify({ id: msg_id, content: message, user: ws.data.name, ts: ts }));
-        if (lastMessages.length > 20) lastMessages.shift();
+        if (lastMessages.length > envVars.output.MAX_MESSAGES) lastMessages.shift();
 
         // Store the messages to redis
         await redis.lpush("messages:list", JSON.stringify({
@@ -187,7 +187,7 @@ const server = serve({
         }));
 
         // Keep last 30 messages by default or more as per supplied values
-        await redis.ltrim("messages:list", 0, (envVars.output.MAX_MESSAGES - 1));
+        await redis.ltrim("messages:list", 0, envVars.output.MAX_MESSAGES);
       } else {
         if (analytics_url) {
           fetch(analytics_url, {
