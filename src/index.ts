@@ -81,6 +81,11 @@ const server = serve({
       }
     },
     '/pfp/:name': (req) => {
+      const origin = req.headers.get("origin");
+      if (!origin) {
+        return new Response('Invalid origin', { status: 403 });
+      }
+
       // Generate a custom avatar based on the name of the user
       const avatar = new Avatar(style, {
         "seed": req.params.name
